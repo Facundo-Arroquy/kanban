@@ -12,6 +12,7 @@ export interface Board {
   id: string
   name: string
   field_config: FieldConfig[]
+  password?: string
   created_at?: string
 }
 

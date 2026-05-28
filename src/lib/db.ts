@@ -30,10 +30,11 @@ export async function getBoards(): Promise<Board[]> {
   return structuredClone(store.boards)
 }
 
-export async function createBoard(name: string): Promise<Board> {
+export async function createBoard(name: string, password?: string): Promise<Board> {
   const board: Board = {
     id: uid(),
     name,
+    ...(password ? { password } : {}),
     field_config: [
       { type: 'description', enabled: true, label: 'Descripción' },
       { type: 'priority', enabled: true, label: 'Prioridad' },
@@ -51,14 +52,18 @@ export async function createBoard(name: string): Promise<Board> {
   return structuredClone(board)
 }
 
-export async function updateBoard(id: string, updates: { name?: string; field_config?: FieldConfig[] }): Promise<void> {
+export async function updateBoard(id: string, updates: { name?: string; field_config?: FieldConfig[]; password?: string | null }): Promise<void> {
   if (isSupabaseConfigured()) {
     const { error } = await sb().from('boards').update(updates).eq('id', id)
     if (error) throw error
     return
   }
   const idx = store.boards.findIndex(b => b.id === id)
-  if (idx !== -1) store.boards[idx] = { ...store.boards[idx], ...updates }
+  if (idx !== -1) {
+    const { password, ...rest } = updates
+    const passwordUpdate = password === null ? { password: undefined } : password !== undefined ? { password } : {}
+    store.boards[idx] = { ...store.boards[idx], ...rest, ...passwordUpdate }
+  }
 }
 
 export async function deleteBoard(id: string): Promise<void> {

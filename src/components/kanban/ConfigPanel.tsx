@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Plus, Trash2, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react'
+import { X, Plus, Trash2, ChevronUp, ChevronDown, AlertTriangle, Lock } from 'lucide-react'
 import type { Board, Column, FieldConfig } from '@/lib/types'
 import { ALL_FIELDS } from '@/lib/types'
 
@@ -9,7 +9,7 @@ interface Props {
   board: Board
   columns: Column[]
   onClose: () => void
-  onUpdateBoard: (updates: { name?: string; field_config?: FieldConfig[] }) => void
+  onUpdateBoard: (updates: { name?: string; field_config?: FieldConfig[]; password?: string | null }) => void
   onAddColumn: (name: string) => void
   onRenameColumn: (id: string, name: string) => void
   onDeleteColumn: (id: string) => void
@@ -26,6 +26,10 @@ export default function ConfigPanel({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [editingColId, setEditingColId] = useState<string | null>(null)
   const [editingColName, setEditingColName] = useState('')
+
+  // Password state
+  const [pwdMode, setPwdMode] = useState<'view' | 'edit'>('view')
+  const [newPassword, setNewPassword] = useState('')
 
   function saveBoardName() {
     const trimmed = boardName.trim()
@@ -52,7 +56,21 @@ export default function ConfigPanel({
     setEditingColId(null)
   }
 
+  function handleSavePassword() {
+    if (newPassword.length !== 4) return
+    onUpdateBoard({ password: newPassword })
+    setNewPassword('')
+    setPwdMode('view')
+  }
+
+  function handleRemovePassword() {
+    onUpdateBoard({ password: null })
+    setNewPassword('')
+    setPwdMode('view')
+  }
+
   const sortedColumns = [...columns].sort((a, b) => a.position - b.position)
+  const hasPassword = Boolean(board.password)
 
   return (
     <div className="fixed inset-0 z-40 flex">
@@ -82,6 +100,78 @@ export default function ConfigPanel({
                 className="flex-1 px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-colors"
               />
             </div>
+          </section>
+
+          {/* Contraseña */}
+          <section>
+            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <Lock size={11} />
+              Contraseña de acceso
+            </h3>
+
+            {pwdMode === 'view' ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-zinc-800/50">
+                  <span className="text-sm text-zinc-400">
+                    {hasPassword ? '••••••••' : 'Sin contraseña'}
+                  </span>
+                  {hasPassword && (
+                    <span className="text-xs text-indigo-400 flex items-center gap-1">
+                      <Lock size={10} />
+                      Protegido
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setPwdMode('edit'); setNewPassword('') }}
+                    className="flex-1 px-3 py-2 rounded-lg text-sm text-zinc-300 hover:text-zinc-100 bg-zinc-800 hover:bg-zinc-700 transition-colors"
+                  >
+                    {hasPassword ? 'Cambiar' : 'Agregar contraseña'}
+                  </button>
+                  {hasPassword && (
+                    <button
+                      onClick={handleRemovePassword}
+                      className="px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-900/50 transition-colors"
+                    >
+                      Quitar
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <input
+                  autoFocus
+                  inputMode="numeric"
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleSavePassword()
+                    if (e.key === 'Escape') { setPwdMode('view'); setNewPassword('') }
+                  }}
+                  placeholder="••••"
+                  maxLength={4}
+                  className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-indigo-500 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 tracking-[0.5em] text-center font-mono"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSavePassword}
+                    disabled={newPassword.length !== 4}
+                    className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    onClick={() => { setPwdMode('view'); setNewPassword('') }}
+                    className="flex-1 px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Campos */}
