@@ -49,6 +49,14 @@ export interface Comment {
   created_at: string
 }
 
+export interface CardPhoto {
+  id: string
+  card_id: string
+  data: string // base64 data URL
+  name?: string
+  created_at: string
+}
+
 // Color palette para tarjetas
 export const CARD_COLORS = [
   { value: '', label: 'Sin color', border: 'border-l-zinc-700', bg: '' },

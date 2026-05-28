@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getSupabaseClient, isSupabaseConfigured } from './supabase'
-import type { Board, Column, Card, CardFields, FieldConfig, Comment } from './types'
+import type { Board, Column, Card, CardFields, FieldConfig, Comment, CardPhoto } from './types'
 import { SAMPLE_BOARDS, SAMPLE_COLUMNS, SAMPLE_CARDS } from './sample-data'
 
 // In-memory store (usado cuando Supabase no está configurado)
@@ -9,6 +9,7 @@ const store = {
   columns: structuredClone(SAMPLE_COLUMNS) as Column[],
   cards: structuredClone(SAMPLE_CARDS) as Card[],
   comments: [] as Comment[],
+  photos: [] as CardPhoto[],
 }
 
 function uid(): string {
@@ -184,6 +185,7 @@ export async function deleteCard(id: string): Promise<void> {
   }
   store.cards = store.cards.filter(c => c.id !== id)
   store.comments = store.comments.filter(c => c.card_id !== id)
+  store.photos = store.photos.filter(p => p.card_id !== id)
 }
 
 // ─── COMMENTS ──────────────────────────────────────────────────────────────
@@ -223,4 +225,43 @@ export async function deleteComment(id: string): Promise<void> {
     return
   }
   store.comments = store.comments.filter(c => c.id !== id)
+}
+
+// ─── PHOTOS ────────────────────────────────────────────────────────────────
+
+export async function getPhotos(cardId: string): Promise<CardPhoto[]> {
+  if (isSupabaseConfigured()) {
+    const { data, error } = await sb().from('card_photos').select('*').eq('card_id', cardId).order('created_at')
+    if (error) throw error
+    return (data ?? []) as CardPhoto[]
+  }
+  return store.photos
+    .filter(p => p.card_id === cardId)
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+}
+
+export async function addPhoto(cardId: string, data: string, name?: string): Promise<CardPhoto> {
+  const photo: CardPhoto = {
+    id: uid(),
+    card_id: cardId,
+    data,
+    name,
+    created_at: new Date().toISOString(),
+  }
+  if (isSupabaseConfigured()) {
+    const { data: saved, error } = await sb().from('card_photos').insert(photo).select().single()
+    if (error) throw new Error(error.message ?? 'Error al guardar la foto')
+    return saved as CardPhoto
+  }
+  store.photos.push(photo)
+  return structuredClone(photo)
+}
+
+export async function deletePhoto(id: string): Promise<void> {
+  if (isSupabaseConfigured()) {
+    const { error } = await sb().from('card_photos').delete().eq('id', id)
+    if (error) throw new Error(error.message ?? 'Error al eliminar la foto')
+    return
+  }
+  store.photos = store.photos.filter(p => p.id !== id)
 }
