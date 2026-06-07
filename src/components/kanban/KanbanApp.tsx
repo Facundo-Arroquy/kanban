@@ -364,9 +364,14 @@ export default function KanbanApp() {
             onDragEnd={() => setDraggedCardId(null)}
           >
             {boardColumns.map(col => {
+              const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
               const colCards = cards
                 .filter(c => c.column_id === col.id)
-                .sort((a, b) => a.position - b.position)
+                .sort((a, b) => {
+                  const pa = PRIORITY_ORDER[a.fields.priority ?? ''] ?? 3
+                  const pb = PRIORITY_ORDER[b.fields.priority ?? ''] ?? 3
+                  return pa !== pb ? pa - pb : a.position - b.position
+                })
               return (
                 <Column
                   key={col.id}
