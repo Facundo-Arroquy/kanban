@@ -201,17 +201,17 @@ export default function KanbanApp() {
     setCardModal({ open: true, card, columnId: card.column_id })
   }
 
-  async function handleSaveCard(data: { title: string; fields: CardFields; color: string }) {
+  async function handleSaveCard(data: { title: string; fields: CardFields; color: string; created_by?: string }) {
     if (!activeBoardId) return
 
     if (cardModal.card) {
-      await db.updateCard(cardModal.card.id, data)
-      setCards(prev => prev.map(c => c.id === cardModal.card!.id ? { ...c, ...data } : c))
+      await db.updateCard(cardModal.card.id, { title: data.title, fields: data.fields, color: data.color })
+      setCards(prev => prev.map(c => c.id === cardModal.card!.id ? { ...c, title: data.title, fields: data.fields, color: data.color, updated_at: new Date().toISOString() } : c))
     } else {
       const colId = cardModal.columnId!
       const colCards = cards.filter(c => c.column_id === colId)
       const position = colCards.length
-      const card = await db.createCard(colId, activeBoardId, data.title, data.fields, data.color, position)
+      const card = await db.createCard(colId, activeBoardId, data.title, data.fields, data.color, position, data.created_by)
       setCards(prev => [...prev, card])
     }
     setCardModal({ open: false })
@@ -234,8 +234,9 @@ export default function KanbanApp() {
     }
     const targetCards = cards.filter(c => c.column_id === targetColumnId)
     const position = targetCards.length
+    const now = new Date().toISOString()
     await db.updateCard(cardId, { column_id: targetColumnId, position })
-    setCards(prev => prev.map(c => c.id === cardId ? { ...c, column_id: targetColumnId, position } : c))
+    setCards(prev => prev.map(c => c.id === cardId ? { ...c, column_id: targetColumnId, position, updated_at: now } : c))
     setDraggedCardId(null)
   }
 

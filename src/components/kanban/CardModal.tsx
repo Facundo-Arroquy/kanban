@@ -10,7 +10,7 @@ interface Props {
   board: Board
   card?: Card
   columnId?: string
-  onSave: (data: { title: string; fields: CardFields; color: string }) => void
+  onSave: (data: { title: string; fields: CardFields; color: string; created_by?: string }) => void
   onClose: () => void
 }
 
@@ -19,6 +19,7 @@ export default function CardModal({ board, card, onSave, onClose }: Props) {
   const [color, setColor] = useState(card?.color ?? '')
   const [fields, setFields] = useState<CardFields>(card?.fields ?? {})
   const [tagInput, setTagInput] = useState('')
+  const [createdBy, setCreatedBy] = useState(card?.created_by ?? '')
   const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'photos'>('details')
 
   // Comments state
@@ -68,7 +69,7 @@ export default function CardModal({ board, card, onSave, onClose }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    onSave({ title: title.trim(), fields, color })
+    onSave({ title: title.trim(), fields, color, created_by: createdBy.trim() || undefined })
   }
 
   function setField<K extends keyof CardFields>(key: K, value: CardFields[K]) {
@@ -313,6 +314,23 @@ export default function CardModal({ board, card, onSave, onClose }: Props) {
                   )}
                 </div>
               )}
+
+              {/* Creado por */}
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+                  {card ? 'Creado por' : 'Tu nombre'}
+                </label>
+                <input
+                  value={createdBy}
+                  onChange={e => setCreatedBy(e.target.value)}
+                  placeholder="Nombre de quien crea la tarjeta..."
+                  readOnly={!!card}
+                  className={[
+                    'w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none transition-colors',
+                    card ? 'opacity-60 cursor-not-allowed' : 'focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50',
+                  ].join(' ')}
+                />
+              </div>
 
               {/* Color */}
               <div>

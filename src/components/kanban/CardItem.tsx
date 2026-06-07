@@ -1,6 +1,6 @@
 'use client'
 
-import { Pencil, Trash2, CalendarDays, User, Tag, MessageSquare } from 'lucide-react'
+import { Pencil, Trash2, CalendarDays, User, Tag, MessageSquare, Clock, UserCheck } from 'lucide-react'
 import type { Card, Board } from '@/lib/types'
 import { CARD_COLORS, PRIORITY_MAP } from '@/lib/types'
 
@@ -24,6 +24,13 @@ export default function CardItem({ card, board, commentCount = 0, onEdit, onDele
     const d = new Date(iso)
     return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
   }
+
+  function formatDateTime(iso: string) {
+    const d = new Date(iso)
+    return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+  }
+
+  const showUpdated = card.updated_at && card.created_at && card.updated_at !== card.created_at
 
   const isOverdue = card.fields.due_date
     ? new Date(card.fields.due_date) < new Date() && card.fields.priority !== undefined
@@ -109,6 +116,30 @@ export default function CardItem({ card, board, commentCount = 0, onEdit, onDele
               {tag}
             </span>
           ))}
+        </div>
+      )}
+
+      {/* Auditoría: creador y fechas */}
+      {(card.created_by || card.created_at || card.updated_at) && (
+        <div className="mt-2 pt-2 border-t border-zinc-700/40 flex flex-col gap-0.5">
+          {card.created_by && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-zinc-600">
+              <UserCheck size={9} />
+              {card.created_by}
+            </span>
+          )}
+          {card.created_at && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-zinc-600">
+              <Clock size={9} />
+              {formatDateTime(card.created_at)}
+            </span>
+          )}
+          {showUpdated && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-zinc-500 italic">
+              <Clock size={9} />
+              Actualizado: {formatDateTime(card.updated_at!)}
+            </span>
+          )}
         </div>
       )}
     </div>

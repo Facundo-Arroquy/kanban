@@ -152,9 +152,11 @@ export async function createCard(
   title: string,
   fields: CardFields,
   color: string,
-  position: number
+  position: number,
+  created_by?: string
 ): Promise<Card> {
-  const card: Card = { id: uid(), column_id: columnId, board_id: boardId, title, fields, position, color }
+  const now = new Date().toISOString()
+  const card: Card = { id: uid(), column_id: columnId, board_id: boardId, title, fields, position, color, created_by, created_at: now, updated_at: now }
   if (isSupabaseConfigured()) {
     const { data, error } = await sb().from('cards').insert(card).select().single()
     if (error) throw error
@@ -168,13 +170,14 @@ export async function updateCard(
   id: string,
   updates: { title?: string; fields?: CardFields; color?: string; column_id?: string; position?: number }
 ): Promise<void> {
+  const payload = { ...updates, updated_at: new Date().toISOString() }
   if (isSupabaseConfigured()) {
-    const { error } = await sb().from('cards').update(updates).eq('id', id)
+    const { error } = await sb().from('cards').update(payload).eq('id', id)
     if (error) throw error
     return
   }
   const idx = store.cards.findIndex(c => c.id === id)
-  if (idx !== -1) store.cards[idx] = { ...store.cards[idx], ...updates }
+  if (idx !== -1) store.cards[idx] = { ...store.cards[idx], ...payload }
 }
 
 export async function deleteCard(id: string): Promise<void> {
